@@ -1,0 +1,44 @@
+﻿@page "/booking"
+@inject RabbitMqService RabbitMqService
+
+<h3>Book a Tour</h3>
+<EditForm Model="@bookingModel" OnValidSubmit="HandleValidSubmit">
+    <DataAnnotationsValidator />
+    <ValidationSummary />
+    
+    <InputText @bind-Value="@bookingModel.Name" placeholder="Name" />
+    <InputText @bind-Value="@bookingModel.Email" placeholder="Email" />
+    <InputSelect @bind-Value="@bookingModel.SelectedTour">
+        <option value="">Select a Tour</option>
+        @foreach (var tour in tours)
+        {
+            <option value="@tour">@tour</option>
+        }
+    </InputSelect>
+    <InputSelect @bind-Value="@bookingModel.Action">
+        <option value="">Select Action</option>
+        <option value="Book">Book</option>
+        <option value="Cancel">Cancel</option>
+    </InputSelect>
+    <button type="submit">Submit</button>
+</EditForm>
+
+@code {
+    private BookingModel bookingModel = new BookingModel();
+    private string[] tours = { "City Tour", "Beach Tour", "Mountain Tour" };
+
+    private async Task HandleValidSubmit()
+    {
+        var message = $"{bookingModel.Action}|{bookingModel.Name}|{bookingModel.Email}|{bookingModel.SelectedTour}";
+        RabbitMqService.SendMessage(message, bookingModel.Action);
+        await Task.CompletedTask;
+    }
+
+    public class BookingModel
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string SelectedTour { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty;
+    }
+}
